@@ -1,0 +1,42 @@
+﻿
+@{
+    ViewBag.Title = SilentAuction.Resources.TextStrings.Credits;
+}
+
+<h2>@ViewBag.Title</h2>
+
+@{ 
+    string body = string.Format(SilentAuction.Resources.TextStrings.CreditText, SilentAuction.Resources.TextStrings.CompanyName);
+}
+
+<style>
+    .software {
+        color: lightyellow;
+        font-size: 200%;
+    }
+
+    .author {
+        color: darkblue;
+        font-size:125%
+    }
+</style>
+
+
+<p>@body</p>
+
+<p class="software">Lightface</p>
+<p class="author">© David Walsh</p>
+<p><a href="http://mootools.net/forge/p/lightface">http://mootools.net/forge/p/lightface</a></p>
+<p><a href="http://opensource.org/licenses/MIT">MIT License</a></p>
+
+<p class="software">Sortable</p>
+<p class="author">© Lebedev Konstantin</p>
+<p><a href="http://rubaxa.github.io/Sortable/">http://rubaxa.github.io/Sortable/</a></p>
+<p><a href="http://opensource.org/licenses/MIT">MIT License</a></p>
+
+<div style="font-family: 'Junction'">
+    <p class="software">Junction font</p>
+    <p class="author">© <a href="http://www.hadilaksono.com">Caroline Hadilaksono</a> and <a href="http://www.tylerfinck.com/">Tyler Finck</a></p>
+    <p><a href="https://www.theleagueofmoveabletype.com/junction">https://www.theleagueofmoveabletype.com/junction</a></p>
+    <p><a href="http://scripts.sil.org/OFL">Open Font License</a></p>
+</div>

@@ -1,0 +1,251 @@
+﻿@Styles.Render("~/bundles/lightfacecss")
+@Scripts.Render("~/bundles/lightface")
+@Styles.Render("~/Content/dropzonescss")
+@Scripts.Render("~/bundles/dropzone")
+
+
+@using SilentAuction.Common
+@using SilentAuction.Resources
+
+<script type="text/javascript">
+    @using SilentAuction.Models
+
+        @{
+            // Dropzone javascript.
+            //
+            // Mandatory Requirements:
+            //  -  Page must have a blank div whose id is "errorReport", where error text will be displayed.
+            //  -  ViewBag.DropzoneURL. NB - if localized routing is enabled, this must be either the full path (including culture, eg "/en-GB/Page") or the relative path to the page from the current lin-
+            //  -  ViewBag.DropzoneMaxFiles
+            //  -  ViewBag.DropzoneDefaultMessage (text to display on the drop zone)
+            //  -  ViewBag.DropzoneRemoveFileMessage (text to display on the "Remove" link)
+            //  -  ViewBag.DropzoneTooBigHelp (text to show when size of data exceeds maximum)
+            //  -  ViewBag.DropzoneId (id of the div element which contains the drop zone)
+
+            // Optional:
+            //  -  Page can have a hidden div with the id "fieldList", which contains a comma-seperated list of input elements which will be submitted with the form.
+            //      Each element will have its .value property sent along with the name in the list (which must also be the control ID)
+            //      OR
+            //      Page can declare the ViewBag.DropzoneFormSubmitter variable, which is a javascript function to be called before form submission, which must append all data entry fields to the form data
+            //      If neither is supplied, only files will be posted.
+            //  -   If the server may return a Json error message, then the view must have an element with the id "dropZoneError" in which the error will be displayed.
+            //      The server should return errors thus:
+            //          return Json(new { error = "error Text" });
+            //  -   ViewBag.DropzoneRedirectOnSuccess (URL to go to if the upload completed OK). Ignored if blank.
+            //  -   ViewBag.DropzoneCreateThumbnails (set to FALSE, disabled thumbnails)
+            //  -   ViewBag.DropzoneCustomSuccessHandler (the name of a javascript function to handle JSon errors returned from the server)
+
+
+            // Example usage:
+            //          <div id="errorReport"></div>
+            //          <div hidden id="fieldList">Name,Description,Reserve</div>
+            //  or:
+            //          ViewBag.DropzoneFormSubmitter="SubmitFormData(formData);"
+            //          <script>
+            //          function SubmitFormData(formData) {
+            //              formData.append("name", "value");
+
+            if (ViewBag.DropzoneURL == null) { throw new Exception("invalid call to parital Dropzone page - missing DropzoneUrl"); }
+            if (ViewBag.DropzoneMaxFiles == null) { throw new Exception("invalid call to parital Dropzone page - missing DropzoneMaxFilesl"); }
+            if (ViewBag.DropzoneDefaultMessage == null) { throw new Exception("invalid call to parital Dropzone page - missing DropzoneDefaultMessage"); }
+            if (ViewBag.DropzoneRemoveFileMessage == null) { throw new Exception("invalid call to parital Dropzone page - missing DropzoneRemoveFileMessage"); }
+            if (ViewBag.DropzoneTooBigHelp == null) { throw new Exception("invalid call to parital Dropzone page - missing DropzoneTooBigHelp"); }
+            if (ViewBag.DropzoneId == null) { throw new Exception("invalid call to parital Dropzone page - missing DropzoneId"); }
+        }
+
+    Dropzone.options.@ViewBag.DropzoneId = { // The camelized version of the ID of the form element
+        autoProcessQueue: false,
+        uploadMultiple: true,
+        url: "@ViewBag.DropzoneURL",
+        parallelUploads: @ViewBag.DropzoneMaxFiles,       // poorly-named parameter. Should be the max no of files for upload in a SINGLE call. Should be >= maxFiles to ensure just 1 request if form data is also to be sent.
+        dictDefaultMessage: "@ViewBag.DropzoneDefaultMessage",
+        dictRemoveFile: "@ViewBag.DropzoneRemoveFileMessage",
+        addRemoveLinks: true,
+        //maxFileSize: 1,     // This option doesn't work and does nothing. Have had to manually catch this in the file upload event
+
+        @{ if (ViewBag.DropzoneCreateThumbnails!=null)
+            {
+                if (!ViewBag.DropzoneCreateThumbnails)
+                {
+                <text>createImageThumbnails: false,</text>
+                    }
+                }
+            }
+
+            maxFiles: @ViewBag.DropzoneMaxFiles,
+
+        // The setting up of the dropzone
+        init: function () {
+                console.log("Setting up");
+                var myDropzone = this;
+
+                // First change the button to actually tell Dropzone to process the queue.
+                document.getElementById("submitButton").addEventListener("click", function (e) {
+
+                    if (myDropzone.getQueuedFiles().length > 0) {
+                        e.preventDefault();     // prevent a seperate submission for the form data
+                        e.stopPropagation();    // prevent any other handlers getting involved
+                        myDropzone.processQueue();      // Send dropped files and form data
+                }
+            });
+
+            this.on('addedfile', function (file) {
+                @{
+                    // Get max request length from system config
+                    int maxRequestLength = 0;
+                    System.Web.Configuration.HttpRuntimeSection section =
+                                                        System.Configuration.ConfigurationManager.GetSection("system.web/httpRuntime") as System.Web.Configuration.HttpRuntimeSection;
+                    if (section != null)
+                    {
+                        maxRequestLength = section.MaxRequestLength; // in KB
+                    }
+                    int maxRequestBytes = (maxRequestLength - 2) * 1000; // less 2 k for form data
+                    int maxMB = maxRequestLength / 1000;            // max in MB for display
+                    string maxRequestLengthString = maxMB.ToString("n");    // formatted string for display
+                }
+
+                var sizeInBytes = @maxRequestBytes;
+                // Check file is OK size. Remove and warn if not
+                if (file.size > sizeInBytes) {
+                    console.log("FILE TOO BIG ERROR");
+                    this.removeFile(file);
+                    showErrorWithSizeHelp("@string.Format(SilentAuction.Resources.Errors.FileTooBig, maxMB)");
+                    return;
+                }
+
+                // Get size of all files queued so far and add to the size of the current file
+                var queuedFiles = this.getQueuedFiles();
+                var totalSize = file.size;
+
+                for (i = 0, l = queuedFiles.length; i < l; i++) {
+                    totalSize += queuedFiles[i].size;
+                    console.log("File  = " + queuedFiles[i].size);
+                    console.log("total = " + totalSize);
+                }
+
+                //TODO: work out how to prevent this from flagging once per file if multiple files have been dropped
+                if(totalSize > sizeInBytes){
+                    console.log("TOTAL SIZE TOO BIG ERROR");
+                    this.removeFile(file);
+
+                    showErrorWithSizeHelp("@string.Format(SilentAuction.Resources.Errors.TotalUploadTooBig, maxMB)");
+                    return;
+                }
+
+                // DropZone doesn't handle too many files nicely. It shows a popup but leaves the file in the zone, allowing it to be POSTED.
+                // Force it to be removed
+                if(queuedFiles.length>=@ViewBag.DropzoneMaxFiles){
+                    console.log("EXCEEDED MAX FILES");
+                this.removeFile(file);
+                var errorMessage="@string.Format(SilentAuction.Resources.Errors.TooManyFiles, ViewBag.DropzoneMaxFiles)";
+                showError(errorMessage);
+                return;
+            }
+
+                // wipe any previous errors
+                document.getElementById("errorReport").innerHTML='';
+
+        });
+
+        // Listen to the sendingmultiple event. In this case, it's the sendingmultiple event instead
+        // of the sending event because uploadMultiple is set to true.
+        this.on("sendingmultiple", function (data, xhr, formData) {
+            console.log("Sending multiple");
+            @{
+                // use custom form submitter if it is specified
+                if (ViewBag.DropzoneFormSubmitter != null)
+                {
+                    <text>@ViewBag.DropzoneFormSubmitter</text>
+                }
+                else
+                {
+                    <text>sendFormData(formData);</text>
+                }
+            }
+        });
+        this.on("successmultiple", function (files, response) {
+            // Gets triggered when the files have successfully been sent.
+            // Redirect user or notify of success.
+
+            // call custom handler if necessary
+            var customHandler = "@ViewBag.DropzoneCustomSuccessHandler";
+            if(customHandler.length>0){
+                var continueProcessing = @ViewBag.DropzoneCustomSuccessHandler (response, this);
+                if(!continueProcessing){
+                    return;
+                }
+            }
+
+            // no custom handler or custom handler returned TRUE
+            var newURL = "@ViewBag.DropzoneRedirectOnSuccess";
+            if(newURL.length >0)
+            {
+                window.location=newURL;
+            }
+        });
+        this.on("errormultiple", function (files, response) {
+            console.log("ERROR: MULTIPLE");
+            $(".alertError").show();
+            $(".alertSuccess").hide();
+        });
+
+        this.on("error", function (data, errorMessage, xhr) {
+            console.log("ERROR");
+            window.alert(errorMessage);
+            $(".alertError").show();
+            $(".alertSuccess").hide();
+            $(".errMessage").text(errorMessage.Message);
+        });
+
+    }
+    }
+
+    function sendFormData(formData){
+        console.log("generating form data");
+
+        var fieldList = document.getElementById("fieldList");
+        if(fieldList){
+            var fields = fieldList.innerHTML.split(",");
+            for(var i=0; i<fields.length; i++)
+            {
+                formData.append(fields[i], document.getElementById(fields[i]).value);
+            }
+        }
+        else {
+            console.log("No field list; only files will be submitted.");
+        }
+
+    }
+
+    function showErrorWithSizeHelp(specificError)
+    {
+        document.getElementById("errorReport").innerHTML='<p>' + specificError +
+                '@Html.Raw(Utils.StringToJSFormat(ViewBag.DropzoneTooBigHelp))</p>' +
+                '<p><a href="javascript:showHelp()">@SilentAuction.Resources.Help.MoreDetails</a></p>';
+
+    }
+
+    function showError(specificError)
+    {
+        document.getElementById("errorReport").innerHTML='<p>' + specificError + "</p>";
+
+    }
+
+    function showHelp()
+    {
+        var confirm = new LightFace({
+            width: 400,
+            title: 'Help',
+            keys: {
+                esc: function() { this.close(); box.unfade(); }
+            },
+            content: '@Html.Raw(Utils.StringToHTML(SilentAuction.Resources.Help.MaxUploadSize))',
+            buttons: [
+                { title: '@SilentAuction.Resources.TextStrings.Close', event: function() { this.close(); }, color: 'green' },
+            ]
+        });
+        confirm.open();
+
+    }
+
+</script>

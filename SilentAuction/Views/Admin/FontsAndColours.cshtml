@@ -1,0 +1,62 @@
+﻿@model SilentAuction.Classes.Font
+@using SilentAuction.Classes
+@using SilentAuction.Consts
+@using SilentAuction.Models
+@using System.Collections.Generic
+@{
+    ViewBag.Title = SilentAuction.Resources.TextStrings.FontsAndColours;
+}
+
+<h2>@ViewBag.Title</h2>
+
+@{
+    SortedDictionary<string, Font> fonts = (SortedDictionary<string, Font>)HttpRuntime.Cache.Get(CacheConsts.FontCache);
+
+    foreach (KeyValuePair<string, Font> kvp in fonts)
+    {
+        Font font = kvp.Value;
+        <link href="@font.CssRelativePath" rel="stylesheet" />
+    }
+
+    ConfigurationParameters configParams = new ConfigurationParameters();
+    ConfigurationParameter fontTitle = configParams.GetParameterByKey(ConfigurationParameterConsts.ParamName_DefaultFontTitle);
+    ConfigurationParameter fontBody = configParams.GetParameterByKey(ConfigurationParameterConsts.ParamName_DefaultFontBody);
+}
+@using (Html.BeginForm(null, null, FormMethod.Post, new { name = "FontsAndColours" }))
+{
+    @Html.AntiForgeryToken()
+
+    <div class="row">
+        <div class="col-sm-2" align="right">
+            <text>@SilentAuction.Resources.TextStrings.FontTitle</text>
+        </div>
+        <div class="col-sm-1">
+            @{ViewData.Add("SelectedFontName", fontTitle.SettingAsString.ToLower()); }
+            <select id="titleFont" name="titleFont" onchange="changeFont(this)" style="font-family:'@fontTitle.SettingAsString'">
+                @Html.Partial("FontComboItems")
+            </select>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-2" align="right">
+            <text>@SilentAuction.Resources.TextStrings.FontDefault</text>
+        </div>
+        <div class="col-sm-1">
+            @{ViewData.Remove("SelectedFontName");
+            ViewData.Add("SelectedFontName", fontBody.SettingAsString.ToLower()); }
+            <select id="defaultFont" name="defaultFont" onchange="changeFont(this)" style="font-family:'@fontBody.SettingAsString'">
+                @Html.Partial("FontComboItems")
+            </select>
+        </div>
+
+    </div>
+
+    <input type="submit" id="submitButton" value="@SilentAuction.Resources.TextStrings.FontChange" class="btn btn-default" />
+}
+
+<script>
+    function changeFont(comboElement) {
+        comboElement.style.fontFamily = comboElement.value;
+    }
+</script>

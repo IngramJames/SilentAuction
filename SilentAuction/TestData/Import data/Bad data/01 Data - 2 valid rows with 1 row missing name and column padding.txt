@@ -1,0 +1,4 @@
+Name,Description,blah,bleh,test
+Lot 1,The first lot,zzz,xxx,ccc
+Lot 2,Lot the second,vvv,bbb,nnn
+,Thirdly lot,ccc,vvv,bbb

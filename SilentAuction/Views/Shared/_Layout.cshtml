@@ -1,0 +1,90 @@
+﻿@using SilentAuction.Consts
+@using SilentAuction.Models
+@using SilentAuction.Classes
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - My ASP.NET Application</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+@{
+    ConfigurationParameters configParams = new ConfigurationParameters();
+    ConfigurationParameter paramFontBody = configParams.GetParameterByKey(SilentAuction.Consts.ConfigurationParameterConsts.ParamName_DefaultFontBody);
+    ConfigurationParameter paramFontTitle = configParams.GetParameterByKey(SilentAuction.Consts.ConfigurationParameterConsts.ParamName_DefaultFontTitle);
+
+    string bodyFontKey = paramFontBody.SettingAsString;
+    string titleFontKey = paramFontTitle.SettingAsString;
+
+    SortedDictionary<string, Font> fonts = (SortedDictionary<string, Font>)HttpRuntime.Cache.Get(CacheConsts.FontCache);
+
+    string bodyFontName = "Sorts Mill Goudy";       // default.
+    if (fonts.ContainsKey(bodyFontKey))
+    {
+        Font fontBody = fonts[bodyFontKey];
+        
+        // import the relevant CSS file
+        <link href="@fontBody.CssRelativePath" rel="stylesheet" />
+
+        bodyFontName = fontBody.FontName;
+    }
+
+    string titleFontName = "Sorts Mill Goudy";       // default.
+    if (fonts.ContainsKey(titleFontKey))
+    {
+        Font fontTitle = fonts[titleFontKey];
+        
+        // import the relevant CSS file
+        <link href="@fontTitle.CssRelativePath" rel="stylesheet" />
+
+        titleFontName = fontTitle.FontName;
+    }
+}
+</head>
+<style>
+    .navbarBlue {
+        background-color: #9090FF;
+        color: white;
+    }
+    body{
+        background-color: #C7B46E;
+    }
+    .navbar-headerFont {
+        font-family: '@titleFontName'; 
+        font-size:200%;
+    }
+
+    * {
+    font-family: '@bodyFontName';
+    }
+    
+</style>
+<body>
+    <div class="navbar navbar-fixed-top navbarBlue">
+        <div class="container">
+            <div class="navbar-header">
+                @Html.ActionLink(SilentAuction.Resources.TextStrings.SilentAuction, "Index", "Home", new { area = "" }, new { @class = "navbar-brand navbar-headerFont" })
+            </div>
+            <div class="navbar-header">
+                @Html.Partial("_Language")
+            </div>
+            <div class="navbar-collapse collapse">
+                @Html.Partial("_LoginPartial")
+            </div>
+        </div>
+    </div>
+
+    <div class="container body-content">
+        @RenderBody()
+        <hr />
+        <footer>
+            <p>&copy; 2015 - @SilentAuction.Resources.TextStrings.CompanyName</p>
+        </footer>
+    </div>
+
+    @RenderSection("scripts", required: false)
+</body>
+</html>

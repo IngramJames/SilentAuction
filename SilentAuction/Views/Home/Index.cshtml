@@ -1,0 +1,64 @@
+﻿@using SilentAuction.Models
+@{
+    ViewBag.Title = SilentAuction.Resources.TextStrings.SilentAuction;
+}
+
+
+@{
+    if (Context.User.IsInRole("Admin"))
+    {
+        <h2>@SilentAuction.Resources.TextStrings.SystemConfiguration</h2>
+        <div class="row">
+            <div class="col-sm-4">
+                <a href="@Url.Action("Index", "Admin")" class="btn btn-danger btn-block">
+                    <span class="glyphicon glyphicon-cog"> @SilentAuction.Resources.TextStrings.SystemConfiguration</span>
+                </a>
+            </div>
+        </div>
+        <hr/>
+    }
+}
+
+<h2>@SilentAuction.Resources.TextStrings.AuctionsAvailable</h2>
+
+<hr />
+@{
+    if (ViewBag.RunningAuctions.Count == 0)
+    {
+        <div>@SilentAuction.Resources.TextStrings.AuctionsNoneRunning</div>
+    }
+    else
+    {
+        foreach (KeyValuePair<string, Auction> kvp in ViewBag.RunningAuctions)
+        {
+            Auction auction = kvp.Value;
+                <div class="row">
+                    <div class="col-sm-4">
+                        @Html.ActionLink(auction.Name, "Index", "Auction", new { id = auction.AuctionId }, new { @class = "btn btn-block btn-default" })
+                    </div>
+                </div>
+            }
+        }
+    }
+<hr />
+
+@{
+    SortedDictionary<string, Auction> closedAuctions = ViewBag.ClosedAuctions;
+    if (closedAuctions.Count > 0)
+    {
+        <h2>@SilentAuction.Resources.TextStrings.AuctionsClosed</h2>
+        foreach (KeyValuePair<string, Auction> kvp in closedAuctions)
+        {
+            Auction auction = kvp.Value;
+            <div class="row">
+                <div class="col-sm-4">
+                    @Html.ActionLink(auction.Name, "Index", "Auction", new { id = auction.AuctionId }, new { @class = "btn btn-block btn-default" })
+                </div>
+            </div>
+        }
+        <hr/>
+    }
+
+}
+
+<a href="@Url.Action("Credits", "Home")">@SilentAuction.Resources.TextStrings.Credits</a>

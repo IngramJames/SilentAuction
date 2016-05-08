@@ -1,0 +1,15 @@
+﻿@using SilentAuction.Classes
+@using SilentAuction.Consts
+@{
+    SortedDictionary<string, Font> fonts = (SortedDictionary<string, Font>)HttpRuntime.Cache.Get(CacheConsts.FontCache);
+    string selectedKey = (string)this.ViewData["SelectedFontName"];
+    foreach (KeyValuePair<string, Font> kvp in fonts)
+    {
+        bool selected = false;
+        if (kvp.Key == selectedKey)
+        {
+            selected = true;
+        }
+        <option style="font-family:'@kvp.Value.FontName'" value="@kvp.Key" @if (selected) {<text>selected="selected"</text>}>@kvp.Value.FontName</option>
+    }
+}

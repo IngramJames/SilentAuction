@@ -1,0 +1,40 @@
+﻿@model SilentAuction.Models.Auction
+@using SilentAuction.Resources
+@{
+    ViewBag.Title = string.Format(TextStrings.AuctionPause, Model.Name);
+}
+
+<h2>@ViewBag.Title</h2>
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <div class="form-horizontal">
+
+        @Html.Partial("~/Views/Admin/AuctionPartial.cshtml", Model)
+
+        <div class="form-group">
+            <table class="col-md-offset-1" class="col-md-3">
+                <tr>
+                    <td>
+                        <div>
+                            <input type="submit" value="@TextStrings.AuctionPauseLink" class="btn btn-default" />
+                        </div>
+                    </td>
+                    <td>@SilentAuction.Resources.TextStrings.AuctionPauseHelp</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+}
+
+<div>
+    @Html.ActionLink("Back to List", "AuctionList")
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+
+

@@ -1,0 +1,71 @@
+﻿@model SilentAuction.Models.Lot
+@Scripts.Render("~/bundles/jquery")
+@Scripts.Render("~/bundles/jqueryval")
+@{
+    ViewBag.Title = SilentAuction.Resources.TextStrings.LotCreate;
+    ViewBag.DropzoneURL = "LotCreate";
+    ViewBag.DropzoneMaxFiles = 100;
+    ViewBag.DropzoneRedirectOnSuccess = "/Admin/LotList";
+    ViewBag.DropzoneDefaultMessage = SilentAuction.Resources.TextStrings.ImagesDragAndDropHere;
+    ViewBag.DropzoneRemoveFileMessage = SilentAuction.Resources.TextStrings.ImageRemove;
+    ViewBag.DropzoneTooBigHelp = SilentAuction.Resources.Errors.ImagesTooBigGeneralHelp;
+    ViewBag.DropzoneId = "ImageDropzone";
+}
+
+<h2>@ViewBag.Title</h2>
+
+
+@using (Html.BeginForm(null, null, FormMethod.Post, new { name = "LotCreateForm"}))
+{
+    @Html.AntiForgeryToken()
+    <div class="form-horizontal">
+        <h4>@SilentAuction.Resources.TextStrings.Lot</h4>
+        <hr />
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        <div class="form-group">
+            @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", id = "Name" } })
+                @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Description, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.TextAreaFor(model => model.Description, 10, 50, new { htmlAttributes = new { @class = "form-control", id = "Description" } })
+                @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Reserve, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Reserve, new { htmlAttributes = new { @class = "form-control", id = "Reserve" } })
+                @Html.ValidationMessageFor(model => model.Reserve, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <div id="ImageDropzone" class="dropzone"></div> <!-- the drop zone -->
+                <div class="dropzone-previews"></div> <!-- this is were the previews should be shown. -->
+                <div id="errorReport"></div>
+                <div hidden id="fieldList">Name,Description,Reserve</div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" id="submitButton" value="@SilentAuction.Resources.TextStrings.LotCreate" class="btn btn-default" />
+            </div>
+        </div>
+
+    </div>
+}
+
+    <div>
+        @Html.ActionLink("Back to List", "LotList")
+    </div>
+
+@Html.Partial("DropZone")

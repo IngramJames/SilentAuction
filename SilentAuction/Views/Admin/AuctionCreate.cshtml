@@ -1,0 +1,89 @@
+﻿@model SilentAuction.Models.Auction
+@using SilentAuction.Consts
+@Scripts.Render("~/bundles/jquery")
+@Scripts.Render("~/bundles/jqueryval")
+@{
+    ViewBag.Title = SilentAuction.Resources.TextStrings.AuctionCreate;
+    ViewBag.DropzoneURL = "AuctionCreate";
+    ViewBag.DropzoneMaxFiles = 1;
+    ViewBag.DropzoneRedirectOnSuccess = "/Admin/AuctionList";
+    ViewBag.DropzoneFormSubmitter = "appendFormData(formData)";
+    ViewBag.DropzoneDefaultMessage = SilentAuction.Resources.TextStrings.ImagesDragAndDropHere;
+    ViewBag.DropzoneRemoveFileMessage = SilentAuction.Resources.TextStrings.ImageRemove;
+    ViewBag.DropzoneTooBigHelp = SilentAuction.Resources.Errors.ImagesTooBigGeneralHelp;
+    ViewBag.DropzoneId = "ImageDropzone";
+}
+
+<h2>@ViewBag.Title</h2>
+
+
+@using (Html.BeginForm()) 
+{
+    @Html.AntiForgeryToken()
+
+    <div class="form-horizontal">
+        <hr />
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        <div class="form-group">
+            @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Description, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.TextAreaFor(model => model.Description, 10, 50, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.UseReserves, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-1">
+                @Html.CheckBoxFor(model => model.UseReserves, new { htmlAttributes = new { @class = "form-control"} })
+                @Html.ValidationMessageFor(model => model.UseReserves, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+
+        <div class="form-group">
+            <label class="control-label col-md-2">@SilentAuction.Resources.TextStrings.AuctionImage</label>
+            <div class="col-md-10">
+                <div id="ImageDropzone" class="dropzone"></div> <!-- the drop zone -->
+                <div class="dropzone-previews"></div> <!-- this is were the previews should be shown. -->
+                <div id="errorReport"></div>
+            </div>
+        </div>
+
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Create" class="btn btn-default", id="submitButton" />
+            </div>
+        </div>
+    </div>
+}
+
+<script>
+    function appendFormData(formData) {
+        appendFormItem(formData, "@AuctionConsts.AuctionField_Name");
+        appendFormItem(formData, "@AuctionConsts.AuctionField_Description");
+    }
+
+    function appendFormItem(formData, elementId) {
+        var element = document.getElementById(elementId);
+        var value = element.value;
+        formData.append(elementId, value);
+    }
+
+    //window.onload = showHideDates();
+</script>
+<div>
+    @Html.ActionLink("Back to List", "AuctionList")
+</div>
+
+@Html.Partial("DropZone")
+

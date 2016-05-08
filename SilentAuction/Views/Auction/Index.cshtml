@@ -1,0 +1,561 @@
+﻿@model SilentAuction.Models.Auction
+@using SilentAuction.Common
+@using SilentAuction.Models
+@Scripts.Render("~/bundles/jquery")
+@Scripts.Render("~/bundles/flasher")
+@Scripts.Render("~/bundles/lightbox")
+@Styles.Render("~/bundles/lightboxcss")
+
+@{
+    ViewBag.Title = string.Format(SilentAuction.Resources.TextStrings.AuctionTitle, Model.Name);
+    Dictionary<int, Bid> highestBidsByUser = ViewBag.HighestBidsByUser;
+    int auctionId = Model.AuctionId;
+}
+
+<style>
+    .auctionTable{
+        border:0;
+        border-collapse:separate; 
+        border-spacing: 0px 5px; 
+        width:100%;
+    }
+
+    .number {
+        text-align: right;
+        vertical-align:top;
+    }
+    .rowLostBid {
+        background-color:burlywood;
+        color: black;
+    }
+
+    .rowLeadBid, cellSuccessfulBid {
+        background-color: gainsboro;
+        color: black;
+    }
+
+    .cellSuccessfulBid {
+        color: forestgreen;
+    }
+
+    .cellErrorMessage {
+        background-color:red;
+        color:white;
+    }
+
+    .cellErrorMessageFormat {
+        border-radius: 4px;
+        text-align:center;
+    }
+
+     /*prevent input textbox text from turning white */
+    .rowInput {
+        background-color: white;
+        color: black;
+    }
+
+    .colpic{
+        width:150px;
+    }
+
+    .colStatusIcon{
+        vertical-align:top;
+        width:33px;
+    }
+
+    .colLeadBid{
+        width:100px;
+    }
+
+    .colYourHighestBid{
+        width:150px;
+    }
+
+    .colBidCol{
+        width:220px;
+        vertical-align:top;
+    }
+
+    .colReserve{
+        width:150px;
+    }
+
+    .colItem {
+        
+    }
+
+    .colSpacing {
+        width:10px;
+    }
+
+    .colLeading {
+        width:64px;
+    }
+    .tableHeader{
+        border-bottom: 1px solid #000;
+        border-top: 1px solid #000;
+        background-color: beige;
+    }
+</style>
+
+<!-- full screen errors div (hidden until error is to be shown) -->
+<div id="errorDisplay" style="position: absolute; top: 0px; left:0px; height:100%; z-index:999; width:100%; opacity:0.5; background-color: gray; visibility:hidden">
+    <div style="position: absolute; top: 30%; left:30%; z-index:999; width:30%; opacity:1; background-color: gray; color:white;">
+        <h1 id="errorMain" ></h1>
+        <h2 id="errorDetail"></h2>
+    </div>
+</div>
+
+<!-- TODO: make this area just "the rest of the screen" instead of absolute positions -->
+<div style="position:absolute; left:0px;width:100%;top:30px; height:90%; display:flex; flex-direction:column;margin:0px; ">
+    <!-- title area -->
+    <header style="background-color: #C7B46E;">
+        <table class="auctionTable">
+            <tr>
+                <td class="colLeading"></td>
+                <td><h3>@ViewBag.Title</h3></td>
+            </tr>
+        </table>
+
+        <!-- column headers -->
+        <table class="auctionTable tableHeader">
+            <tr>
+                <td class="colLeading"></td>
+                <td class="colpic">
+                    @{
+                        if (Context.User.IsInRole("Admin"))
+                        {
+                            @Html.ActionLink(@SilentAuction.Resources.TextStrings.ByUser, "ResultsByUser", "Auction", new { id = Model.AuctionId }, new { @class = "btn btn-block btn-primary" })
+                        }
+                    }
+                </td>
+                <td class="colStatusIcon"></td>
+                @{
+                    // work out heading text depending on whether or not auction is open
+                    string highestBidText;
+                    string bidColumnText;
+                    if (Model.Status == AuctionStatus.Closed)
+                    {
+                        highestBidText = SilentAuction.Resources.TextStrings.WinningBid;
+                        bidColumnText = SilentAuction.Resources.TextStrings.Winner;
+                    }
+                    else
+                    {
+                        highestBidText = SilentAuction.Resources.TextStrings.LeadingBid;
+                        bidColumnText = SilentAuction.Resources.TextStrings.BidForItem;
+                    }
+                }
+
+                <td class="colLeadBid number">@highestBidText</td>
+                <td class="colSpacing"></td>
+                <td class="colYourHighestBid number">@SilentAuction.Resources.TextStrings.YourHighestBid</td>
+                <td class="colSpacing"></td>
+                @{ if (Model.Status == AuctionStatus.Closed)
+                    {
+                        <td class="colBidCol">@bidColumnText</td>
+                    }
+                    else
+                    {
+                        <td class="colBidCol number">@bidColumnText</td>
+                    }
+                }
+
+                @{ if (Model.UseReserves)
+                    {
+                        <td class="colReserve number">@SilentAuction.Resources.TextStrings.Reserve</td>
+                    }
+                }
+
+                <td class="colSpacing"></td>
+                <td class="colItem">@SilentAuction.Resources.TextStrings.Item</td>
+            </tr>
+        </table>
+    </header>
+
+    <!-- auction items-->
+    <main style="overflow:auto; flex-grow:1;">
+        <input type="hidden" id="auctionId" value="@Model.AuctionId" />
+        <input type="hidden" id="auctionStatus" value="@Model.Status" />
+        @{
+            // Edge case. Possible if auction hasn't been created properly.
+            // If there are no lots, display nothing
+            if (Model.Lots != null)
+            {
+                <table class="auctionTable" style="height:50%;">
+                    @foreach (KeyValuePair<int, Lot> kvp in Model.LotsSorted())
+                    {
+                        Lot lot = kvp.Value;
+
+                        // prepare strings for use in row
+                        string lotId = "lot" + lot.LotId;
+                        string bidInputId = "bidLot" + lot.LotId;
+                        string currentBidId = "currentBid" + lot.LotId;
+                        string yourHighestBidId = "yourHighestBid" + lot.LotId;
+                        string errorId = "error" + lot.LotId;
+                        string bidStatusIconId = "bidStatusIcon" + lot.LotId;
+                        Bid highestBid = lot.HighestBid;
+                        string currentBid = string.Empty;
+
+                        // highest bid by anyone
+                        if (highestBid != null)
+                        {
+                            currentBid = Formatting.FormatCurrency(highestBid.Amount);
+                        }
+
+                        string reserve = Formatting.FormatCurrency(lot.Reserve);
+
+                        string lightboxId = "image" + lot.LotId.ToString();
+
+                        Bid highestBidByUser = null;
+                        string highestBidAmountByUser = string.Empty;
+                        string highestBidStatusIcon = string.Empty;
+                        string rowStatusClass = string.Empty;
+                        if (highestBidsByUser.ContainsKey(lot.LotId))
+                        {
+                            // highest bid by THIS user
+                            highestBidByUser = highestBidsByUser[lot.LotId];
+                            highestBidAmountByUser = Formatting.FormatCurrency(highestBidByUser.Amount);
+
+                            // check to see if this user controls the lot
+                            if (highestBidByUser.Status == BidStatus.Open)
+                            {
+                                highestBidStatusIcon = "glyphicon glyphicon-ok";
+                                rowStatusClass = "rowLeadBid";
+                            }
+                            else
+                            {
+                                highestBidStatusIcon = "glyphicon glyphicon-remove";
+                                rowStatusClass = "rowLostBid";
+                            }
+                        }
+                        <tr class="row @rowStatusClass" id="@lotId">
+                            <td class="colLeading"></td>
+                            <td class="colpic"><a href="@lot.MainImage.WebPath" data-lightbox="@lightboxId"><img src="@lot.MainImage.GetThumbnail(50)" /></a>
+                            
+                            @{ 
+                                ImageFile mainImage = lot.MainImage;
+                                foreach(LotImageFile imgfile in LotImageFile.SortByOrder(lot.ImageFiles))
+                                {
+                                    if (mainImage.ImageFileId != imgfile.ImageFileId)
+                                    {
+                                        <a href="@imgfile.ImageFile.WebPath" data-lightbox="@lightboxId"></a>
+                                    }
+                                }
+                            }
+
+                            </td>
+                            <td class="colStatusIcon"><div id="@bidStatusIconId" class="@highestBidStatusIcon"></div></td>
+                            <td class="colLeadBid number" id="@currentBidId">@currentBid</td>
+                            <td class="colSpacing"></td>
+                            <td class="colYourHighestBid number"><div id="@yourHighestBidId">&nbsp;@highestBidAmountByUser</div></td>
+                            <td class="colSpacing"></td>
+
+                            @if (Model.Status == AuctionStatus.Closed)
+                            {
+                                string result = string.Empty;
+                                if (highestBid != null)
+                                {
+                                    result = highestBid.User.UserName;
+                                    if (highestBid.Amount < lot.Reserve && Model.UseReserves)
+                                    {
+                                        result += " " + SilentAuction.Resources.TextStrings.ReserveNotMet;
+                                    }
+                                }
+                                <td class="colBidCol">@result</td>
+                            }
+                            else
+                            {
+                                <td class="colBidCol">
+                                    <table width="100%">
+                                        <tr>
+                                            <td colspan="3" width="100%">
+                                                <input id="@bidInputId" type="number" class="rowInput" style="width:100%" />
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td id="@errorId" class="cellErrorMessageFormat" width="50%"></td>
+                                            <td width="10%"></td>
+                                            <td width="40%">
+                                                <a onclick="doBid('@lot.LotId')" class="btn btn-block btn-success">Bid</a>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            }
+                            @{ if (Model.UseReserves)
+                                {
+                                    <td class="colReserve number">@reserve</td>
+                                }
+                            }
+                            <td class="colSpacing"></td>
+                            <!-- TODO implement more details -->
+                            <td class="colItem"><p>@lot.Name</p><p><a href="#">@SilentAuction.Resources.TextStrings.MoreDetails</a></p></td>
+                        </tr>
+                    }
+                </table>
+            }
+        }
+    </main>
+    <!-- bottom summary bar-->
+    <footer style="background-color:white;">
+        <table class="auctionTable tableHeader" style="border-spacing: 0px 0px; ">
+            <tr>
+                @{
+                    string totalText = Model.Status == AuctionStatus.Closed ?
+                        "Your total winning bids" :
+                        @SilentAuction.Resources.TextStrings.YourTotalLeadingBids;
+                }
+                <td class="colLeading"></td>
+                <td class="colpic"></td>
+                <td class="colStatusIcon"></td>
+                <td class="colLeadBid"></td>
+                <td class="colSpacing"></td>
+                <td class="colYourHighestBid number">@totalText</td>
+                <td class="colSpacing"></td>
+                <td class="colBidCol number rowLeadBid"></td>
+                <td class="colReserve number"></td>
+                <td class="colSpacing"></td>
+                <td class="colItem"></td>
+            </tr>
+            <tr>
+                <td class="colLeading"></td>
+                <td class="colpic"></td>
+                <td class="colStatusIcon"></td>
+                <td class="colLeadBid"></td>
+                <td class="colSpacing"></td>
+                <td class="colYourHighestBid number" id="yourTotalExposure">@Formatting.FormatCurrency(ViewBag.TotalExposure)</td>
+                <td class="colSpacing"></td>
+                <td class="colBidCol number rowLeadBid"></td>
+                <td class="colReserve number"></td>
+                <td class="colSpacing"></td>
+                <td class="colItem"></td>
+
+            </tr>
+        </table>
+    </footer>
+</div>
+<script>
+    @if (Model.Status != AuctionStatus.Closed)
+    {
+        // if the auction is closed, disallow any bidding or regular refreshing.
+        <text>
+        function checkStatus(status) {
+        // check the status and display error if necessary
+        switch(status){
+            case @((int)AuctionStatus.Pending):
+                displayMainError('@SilentAuction.Resources.Errors.AuctionStatusPendingTitle', '@SilentAuction.Resources.Errors.AuctionStatusPendingDetail');
+                break;
+
+            case @((int)AuctionStatus.Closed):
+                // display the "closed message".
+                displayMainError('@SilentAuction.Resources.Errors.AuctionStatusClosedTitle', '@SilentAuction.Resources.Errors.AuctionStatusClosedDetail');
+
+                // start timer to redirection
+                var reloader = window.setInterval(function () {
+                    location.reload(true);
+                }, 5000);   // todo - parameterise
+                break;
+
+            case @((int)AuctionStatus.Paused):
+                displayMainError('@SilentAuction.Resources.Errors.AuctionStatusPausedTitle', '@SilentAuction.Resources.Errors.AuctionStatusPausedDetail');
+                break;
+
+            case @((int)AuctionStatus.Running):
+                //TODO: decide how to handle this case.
+                clearMainError();
+                break;
+        }
+    }
+
+    window.onload = checkStatus(@((int)Model.Status));
+
+    function displayMainError(title, detail) {
+        // grey out the screen and show error message.
+        var el = document.getElementById("errorDisplay");
+        el.style.visibility = "visible";
+
+        el = document.getElementById("errorMain");
+        el.innerText = title;
+
+        el = document.getElementById("errorDetail");
+        el.innerText = detail;
+    }
+
+    function clearMainError() {
+        var el = document.getElementById("errorDisplay");
+        el.style.visibility = "hidden";
+    }
+
+    // TODO: add anti-forgery cookie
+    function doBid(lotId) {
+        var auctionId = document.getElementById("auctionId").value;
+        var dataElementId = "bidLot" + lotId;
+        var bidAmount = document.getElementById(dataElementId).value;
+
+        var data = "auctionId=" + auctionId + "&lotId=" + lotId + "&bid=" + bidAmount;
+
+        $.ajax({
+            url: '@Url.Action("Bid", "Auction")',
+            type: "POST",
+            data: data,
+            success: function (data) {
+                if (data.result == "OK") {
+                    // bid succeeded.
+                    // Clear any errors
+                    clearError(lotId);
+
+                    // set status of this lot to have this user in control and flash the row
+                    setStatus(lotId, true);
+                    flashElement("lot" + lotId, "rowLeadBid");
+
+                    // update the text to reflect the new highest bid
+                    var formattedBid = data.formattedBid;
+                    var userHighestBid = document.getElementById("yourHighestBid" + lotId);
+                    userHighestBid.innerHTML = formattedBid;
+                    var currentBid = document.getElementById("currentBid" + lotId);
+                    currentBid.innerHTML = formattedBid;
+                    return;
+                }
+
+                if (data.result == "bidTooLow") {
+                    // bid was saved but was too low; somebody else got there first.
+                    flashElementAndChangeText("error" + lotId, "cellErrorMessage", "@SilentAuction.Resources.TextStrings.BidTooLow");
+
+                    // update the highest bid by this user; they may previously have had a "highest bid" which was successful
+                    var formattedHighestBid = data.yourHighestBid;
+                    var userHighestBid = document.getElementById("yourHighestBid" + lotId);
+                    userHighestBid.innerHTML = formattedHighestBid;
+
+                    // THIS bid may have been too low; that doesn't mean that the user hasn't made a higher bid which is still the leading bid.
+                    // Only change the status if they do not control the lot.
+                    if (data.youControlLot == 'N') {
+                        setStatus(lotId, false);
+                    }
+                    return;
+                }
+
+                if (data.result == "auctionNotRunning") {
+                    // auction is not running.
+                    flashElementAndChangeText("error" + lotId, "cellErrorMessage", "@SilentAuction.Resources.TextStrings.AuctionNotRunning");
+
+                    // literally nothing can have changed, so no updates: just return.
+                    return;
+                }
+
+                if(data.result == "validationFail") {
+                    // the controller failed validation. Show error
+                    flashElementAndChangeText("error" + lotId, "cellErrorMessage", data.errorMessage);
+                }
+
+                if (data.result == "error") {
+                    alert(data.errorMessage);
+                    return;
+                }
+
+            },
+            error: function (e) {
+                alert("@SilentAuction.Resources.Errors.ServerError" + "\n" + "@SilentAuction.Resources.Errors.PleaseNotifyAuctionManager");
+            }
+        });
+    }
+
+    function clearError(lotId) {
+        var elementId = "error" + lotId;
+        var errorCell = document.getElementById(elementId);
+        errorCell.innerHTML = "";
+        errorCell.style.background = "";
+    }
+
+
+    function flashElementAndChangeText(elementId, toClass, newText) {
+        var el = document.getElementById(elementId);
+        el.innerHTML = newText;
+        flashElement(elementId, toClass);
+    }
+    function flashElement(elementId, toClass) {
+        var fromRGBBack = getElementBackColorRGB(elementId);
+        var fromRGBFore = getElementForeColorRGB(elementId);
+        var toRGBBack = getStyleRuleBackColorRGB(toClass);
+        var toRGBFore = getStyleRuleForeColorRGB(toClass);
+
+        addFlasher(elementId, fromRGBBack, fromRGBFore, toRGBBack, toRGBFore, 100);
+    }
+
+    var refresher = window.setInterval(function() {
+        var data = "auctionId=@auctionId";
+        $.ajax({
+            url: '@Url.Action("GetUpdatedBids/" + auctionId.ToString(), "Auction")',
+            type: "GET",
+            success: function(data) {
+                bids = data.bids;
+                for (i = 0; i < bids.length; i += 3) {
+                    var lotId = bids[i];
+                    var amount = bids[i + 1];
+                    var isThisUser = bids[i + 2];
+
+                    var currentBidElementId = "currentBid" + lotId;
+                    var rowId = "lot" + lotId;
+                    var currentBid = document.getElementById(currentBidElementId);
+                    var oldBid = currentBid.innerText;
+                    if (oldBid != amount) {
+                        // change bid text
+                        currentBid.innerHTML = amount;
+
+                        // Flash row as a losing bid if user does not control it
+                        if(!isThisUser){
+                            flashElement(rowId, "rowLostBid");
+                            setStatus(lotId, false);
+                        }
+                        else{
+                            // highest bid and user controls it AND not the same as it was.
+                            // Resync page.
+                            var userHighestBid = document.getElementById("yourHighestBid" + lotId);
+                            userHighestBid.innerHTML = amount;
+
+                            flashElement(rowId, "rowLeadBid");
+                            setStatus(lotId, true);
+                        }
+                    }
+
+                    var totalExposure = data.yourTotalExposure;
+                    var userExposure = document.getElementById("yourTotalExposure");
+                    var lastText = userExposure.innerText;
+                    if(lastText!=totalExposure) {
+                        userExposure.innerText = totalExposure;
+                        flashElement("yourTotalExposure", "rowLeadBid");
+                    }
+
+                }
+
+                // check the auction status and go dark if necessary. Admin may have paused or closed.
+                checkStatus(data.status);
+                return;
+            },
+            error: function(e) {
+                var errorHeader = '@SilentAuction.Resources.Errors.AuctionUnavailable';
+                displayMainError(errorHeader, '@SilentAuction.Resources.Errors.AuctionCannotGetBids');
+
+                // server error. Wait for page to refresh manually.
+                // No point spamming requests in the meantime.
+                clearInterval(refresher);
+            }
+        });
+        //TODO: Parameterise the frequency of the request
+    }, 1000)
+
+
+    function setStatus(id, isOK) {
+        var statusIcon = document.getElementById("bidStatusIcon" + id);
+        var lotRow = document.getElementById("lot" + id);
+
+
+        if (isOK) {
+            statusIcon.className = "glyphicon glyphicon-ok";
+        }
+        else {
+            statusIcon.className = "glyphicon glyphicon-remove";
+        }
+    }
+    </text>
+    }
+</script>

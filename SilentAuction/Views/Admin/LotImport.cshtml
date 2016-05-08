@@ -1,0 +1,142 @@
+﻿@Scripts.Render("~/bundles/jquery")
+@Scripts.Render("~/bundles/jqueryval")
+
+@{
+    ViewBag.Title = SilentAuction.Resources.TextStrings.LotImport;
+    ViewBag.DropzoneURL = "LotImport";
+    ViewBag.DropzoneMaxFiles = 100;
+    ViewBag.DropzoneDefaultMessage = SilentAuction.Resources.TextStrings.LotImportDragAndDropHere;
+    ViewBag.DropzoneRemoveFileMessage = SilentAuction.Resources.TextStrings.FileRemove;
+    ViewBag.DropzoneTooBigHelp = SilentAuction.Resources.Errors.ImportFilesTooBigGeneralHelp;
+    ViewBag.DropzoneId = "FileDropzone";
+    ViewBag.DropzoneCreateThumbnails = false;
+    ViewBag.DropzoneCustomSuccessHandler = "dropzoneSuccessHandler";
+}
+
+<h2>@ViewBag.Title</h2>
+
+@using (Html.BeginForm(null, null, FormMethod.Post, new { name = "LotImportForm" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="form-horizontal">
+
+        <hr />
+        <div class="form-group">
+            <div class="col-md-10">
+                <div id="FileDropzone" class="dropzone"></div> <!-- the drop zone -->
+                <div class="dropzone-previews"></div> <!-- this is were the previews should be shown. -->
+                <div id="errorReport"></div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-10">
+                <input type="submit" id="submitButton" value="@SilentAuction.Resources.TextStrings.LotImport" class="btn btn-default" />
+                <input type="button" id="refreshButton" value="@SilentAuction.Resources.TextStrings.ImportMore" onclick="location.reload()" class="btn btn-default" style="visibility:hidden" />
+            </div>
+        </div>
+
+        <div id="dropZoneError" class="text-danger"></div>
+        <div id="dropZoneGoodLots"></div>
+
+        <div>
+            <p>
+                @Html.Raw(SilentAuction.Common.Utils.StringToHTML(SilentAuction.Resources.Help.ImportHelp))
+            </p>
+        </div>
+    </div>
+}
+
+<div>
+    @Html.ActionLink(SilentAuction.Resources.TextStrings.BackToAdmin, "Index")
+</div>
+
+<script type="text/javascript">
+    function dropzoneSuccessHandler(response, dropzone) {
+
+        // get and report any errors
+        var errors = response.error;
+        var errorsFound = false;
+        if (errors) {
+            dropzoneErrorHandler(errors);
+            errorsFound = true;
+        }
+
+        var goodLots = response.goodLots;
+        if (goodLots) {
+            showGoodLots(goodLots, errorsFound);
+        }
+
+        // dropzone now corrupt and has to be reloaded in order to reset itself
+        document.getElementById("submitButton").disabled = true;
+        document.getElementById("refreshButton").style.visibility = "visible";
+
+        // do not navigate away from the results display.
+        return false;
+    }
+
+
+    function showGoodLots(goodLots, errorsFound) {
+        var goodLotText = "@SilentAuction.Resources.TextStrings.LotImportGoodDataNotSaved";
+        if (!errorsFound) {
+            goodLotText = "@SilentAuction.Resources.TextStrings.LotImportDataImported";
+        }
+        var lotTable = "<p>" + goodLotText + "</p><table class=\"table\"><tr><th>@SilentAuction.Resources.TextStrings.Filename</th><th>@SilentAuction.Resources.TextStrings.LotImportDataRows</th><th>@SilentAuction.Resources.TextStrings.LotImportGoodLots</th></tr>";
+        var i = 0;
+        while (i < goodLots.length) {
+            lotTable = lotTable.concat("<tr>");
+            var fileName = goodLots[i++];
+            var dataRows = goodLots[i++];
+            var goodRows = goodLots[i++];
+
+            lotTable = lotTable.concat("<td>");
+            lotTable = lotTable.concat(fileName);
+            lotTable = lotTable.concat("</td>");
+            lotTable = lotTable.concat("<td>");
+            lotTable = lotTable.concat(dataRows);
+            lotTable = lotTable.concat("</td>");
+            lotTable = lotTable.concat("<td>");
+            lotTable = lotTable.concat(goodRows);
+            lotTable = lotTable.concat("</td>");
+            lotTable = lotTable.concat("</tr>");
+        }
+        lotTable = lotTable.concat("</table>");
+
+        var lotArea = document.getElementById("dropZoneGoodLots");
+        lotArea.innerHTML = lotTable;
+
+
+    }
+
+
+    function dropzoneErrorHandler(jsonErrors) {
+        var errorTable = "<p>@SilentAuction.Resources.Errors.ImportNoDataImported @SilentAuction.Resources.Errors.ErrorsFollowingFound </p><table class=\"table\"><tr><th>@SilentAuction.Resources.TextStrings.Filename</th><th>@SilentAuction.Resources.TextStrings.LineNo</th><th>@SilentAuction.Resources.TextStrings.Error</th></tr>";
+        var i = 0;
+        while (i < jsonErrors.length) {
+            errorTable = errorTable.concat("<tr>");
+            var fileName = jsonErrors[i++];
+            var lineNo = jsonErrors[i++];
+            var errorText = jsonErrors[i++];
+
+            errorTable = errorTable.concat("<td>");
+            errorTable = errorTable.concat(fileName);
+            errorTable = errorTable.concat("</td>");
+            errorTable = errorTable.concat("<td>");
+            if (lineNo != "-1") {
+                errorTable = errorTable.concat(lineNo);
+            }
+            errorTable = errorTable.concat("</td>");
+            errorTable = errorTable.concat("<td>");
+            errorTable = errorTable.concat(errorText);
+            errorTable = errorTable.concat("</td>");
+            errorTable = errorTable.concat("</tr>");
+        }
+        errorTable = errorTable.concat("</table>");
+
+        var errorArea = document.getElementById("dropZoneError");
+        errorArea.innerHTML = errorTable;
+
+    }
+</script>
+
+@Html.Partial("DropZone")

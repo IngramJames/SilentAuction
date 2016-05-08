@@ -1,0 +1,39 @@
+﻿@using SilentAuction.Models
+@using SilentAuction.Consts
+@model Dictionary<ParameterCategory, Dictionary<string, ConfigurationParameter>>
+
+@{
+    ViewBag.Title = @SilentAuction.Resources.TextStrings.SystemSettings;
+}
+
+<h2>@ViewBag.Title</h2>
+
+
+    @foreach (KeyValuePair<ParameterCategory, Dictionary<string, ConfigurationParameter>> kvp in Model)
+    {
+        if (kvp.Key != ParameterCategory.Hidden)
+        {
+            <h4>@ConfigurationParameterConsts.GetCategoryName(kvp.Key)</h4>
+            <table class="table">
+                <tr>
+                    <th width="200">@SilentAuction.Resources.TextStrings.Behaviour</th>
+                    <th width="200">@SilentAuction.Resources.TextStrings.Setting</th>
+                    <th width="200">@SilentAuction.Resources.TextStrings.UserOverridable</th>
+                    <th width="500">@SilentAuction.Resources.TextStrings.Description</th>
+                    <th></th> <!-- for edit button -->
+                </tr>
+
+                @foreach (KeyValuePair<string, ConfigurationParameter> param in kvp.Value)
+                {
+                    <tr>
+                        <th>@param.Value.ReadableName</th>
+                        <th>@param.Value.FormattedSetting()</th>
+                        <th>@param.Value.UserOverridable.ToString()</th>
+                        <th>@param.Value.ReadableDescription</th>
+                        <th>@Html.ActionLink(SilentAuction.Resources.TextStrings.Edit, "SystemSettingEdit", new { id = param.Value.Id })</th>
+                    </tr>
+                }
+
+            </table>
+        }
+    }

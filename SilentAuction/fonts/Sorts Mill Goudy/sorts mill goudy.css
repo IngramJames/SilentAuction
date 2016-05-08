@@ -1,0 +1,13 @@
+@font-face {
+    font-family: 'Sorts Mill Goudy';
+    src: url('goudystm-webfont.eot');
+    src: url('goudystm-webfont.eot?#iefix') format('embedded-opentype'),
+         url('goudystm-webfont.woff') format('woff'),
+         url('goudystm-webfont.ttf') format('truetype'),
+         url('goudystm-webfont.svg#sorts_mill_goudyregular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
+

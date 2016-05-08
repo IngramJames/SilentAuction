@@ -1,0 +1,78 @@
+﻿@using SilentAuction.Classes
+@using SilentAuction.Common
+@using SilentAuction.Models
+@using SilentAuction.Resources
+
+<style>
+    .userHeader {
+        background-color:#efd64b;
+        color: black;
+    }
+
+    .userTotal {
+        background-color: grey;
+        color: black;
+    }
+</style>
+
+
+@{
+    ViewBag.Title = SilentAuction.Resources.TextStrings.AuctionResultsByUser;
+}
+
+<h2>@ViewBag.Title</h2>
+@{
+    bool first = true;
+    SortedList<string, UserResults> results = ViewBag.UserResults;
+    <table class="table">
+    @{
+        foreach (KeyValuePair<string, UserResults> kvp in results)
+        {
+            if(!first)
+            {
+                <text><tr><td></td><td></td></tr></text>
+            }
+            first = false;
+            UserResults userResults = kvp.Value;
+            string currentUser = userResults.User.UserName;
+
+            <!--TODO make pretty and shove in rest of data-->
+            <!-- TODO: allow admin to mark lots as paid for -->
+            <tr border="1">
+                <td class="userHeader">@currentUser</td>
+                <td class="userHeader">@SilentAuction.Resources.TextStrings.WinningBid</td>
+                <td class="userHeader" width="100"></td>
+            </tr>
+            foreach (KeyValuePair<int, Lot> kvpInner in userResults.Lots)
+            {
+                Lot lot = kvpInner.Value;
+                <tr>
+                    <td>@kvpInner.Value.Name</td>
+                    <td>@Formatting.FormatCurrency(lot.HighestBid.Amount)</td>
+                    <td></td>
+                </tr>
+            }
+            <!-- Total -->
+            <tr>
+                <td class="userTotal"><strong>@string.Format(SilentAuction.Resources.TextStrings.UserTotal, currentUser)</strong></td>
+                <td class="userTotal">@Formatting.FormatCurrency(userResults.TotalExposure())</td>
+                <td class="userTotal"></td>
+            </tr>
+
+            <!-- Paid -->
+            <tr>
+                <td class="userTotal"><strong>@string.Format(SilentAuction.Resources.TextStrings.UserPaid, currentUser)</strong></td>
+                <td class="userTotal">@Formatting.FormatCurrency(0)</td>
+                <td class="userTotal"></td>
+            </tr>
+            <!-- Outstanding Balance -->
+            <tr>
+                <td class="userTotal"><strong>@string.Format(SilentAuction.Resources.TextStrings.UserOutstanding, currentUser)</strong></td>
+                <td class="userTotal">@Formatting.FormatCurrency(0)</td>
+                <!--TODO: make suitable page for link to hit. Specify username in the link here-->
+                <td class="userTotal"><a href="/Admin/UserPage" class="btn btn-danger btn-block"><span class="glyphicon glyphicon-credit-card"> @string.Format(SilentAuction.Resources.TextStrings.UserMakePayment, currentUser)</span></a></td>
+            </tr>
+        }
+    }
+    </table>
+}

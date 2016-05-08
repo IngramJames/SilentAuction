@@ -1,0 +1,126 @@
+﻿@model SilentAuction.Models.Lot
+@using SilentAuction.Models
+@Styles.Render("~/Content/dropzonescss")
+@Scripts.Render("~/bundles/jquery")
+@Scripts.Render("~/bundles/jqueryval")
+@{
+    ViewBag.Title = SilentAuction.Resources.TextStrings.LotImagesEdit;
+    ViewBag.DropzoneURL = "../LotImagesEdit/" + Model.LotId;
+    ViewBag.DropzoneMaxFiles = 100;
+    ViewBag.DropzoneRedirectOnSuccess = "/Admin/LotEdit/" + Model.LotId;
+    ViewBag.DropzoneDefaultMessage = SilentAuction.Resources.TextStrings.ImagesDragAndDropHere;
+    ViewBag.DropzoneRemoveFileMessage = SilentAuction.Resources.TextStrings.ImageRemove;
+    ViewBag.DropzoneTooBigHelp = SilentAuction.Resources.Errors.ImagesTooBigGeneralHelp;
+    ViewBag.DropzoneId = "LotImageDropZone";
+}
+
+<h2>@string.Format(SilentAuction.Resources.TextStrings.ImagesFor, @Model.Name)</h2>
+
+
+@using (Html.BeginForm(null, null, FormMethod.Post, new { id = "formData" }))
+{
+    @Html.AntiForgeryToken()
+
+    <div class="form-horizontal">
+        <hr />
+        <input id="LotId" name="LotId" type="hidden" value="@Model.LotId" />
+
+        <div class="form-group">
+            <div class="container">
+                <div id="multi" style="margin-left: 30px">
+
+                    <div class="layer tile" data-force="30">
+                        <div class="tile__name">@SilentAuction.Resources.TextStrings.LotImagesHelp</div>
+                        <div class="tile__list" id="imagesForLot">
+                            @{
+                                foreach (LotImageFile lif in Model.ImageFiles)
+                                {
+                                    <img id="@lif.ImageFileId" src="@lif.ImageFile.GetThumbnail(50)" />
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div>
+                <div id="LotImageDropZone" class="dropzone"></div> <!-- the drop zone -->
+                <div class="dropzone-previews"></div> <!-- this is were the previews should be shown. -->
+                <div id="errorReport"></div>
+                <div hidden id="fieldList">LotId,imageOrder</div>
+            </div>
+        </div>
+    </div>
+
+
+    <input type="hidden" id="imageOrder" name="imageOrder" />
+    <div>
+        <input type="submit" id="submitButton" value="@SilentAuction.Resources.TextStrings.Save" class="btn btn-default" />
+        <input onclick="window.history.back()" class="btn btn-default" value="@SilentAuction.Resources.TextStrings.Cancel">
+    </div>
+}
+
+<script src="~/Content/3rdparty/Sortable.js"></script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        console.log("init sortable");
+        // initialise ID list
+        prepareIds();
+
+        // code from http://rubaxa.github.io/Sortable/st/app.js
+        // Multi groups
+        Sortable.create(document.getElementById('multi'), {
+            animation: 150,
+            draggable: '.tile',
+            handle: '.tile__name'
+        });
+
+        [].forEach.call(document.getElementById('multi').getElementsByClassName('tile__list'), function (el) {
+            Sortable.create(el, {
+                group: 'photo',
+                animation: 150,
+
+                // Changed sorting within list
+                onUpdate: function (/**Event*/evt) {
+                    var itemEl = evt.item;  // dragged HTMLElement
+                    console.log("onUpdate");
+                    prepareIds();   // keep ID list up to date
+                    // + indexes from onEnd
+                },
+
+            });
+        });
+
+    });
+</script>
+
+<script>
+    function prepareIds() {
+        var images = document.getElementById("imagesForLot");
+        var idList = "";
+        var first = true;
+        var i;
+        for (i = 0; i < images.childNodes.length; i++) {
+            var img = images.childNodes[i];
+            if (img.id) {
+                if (!first) {
+                    idList += ",";
+                }
+                first = false;
+
+                idList += img.id;
+            }
+        }
+
+        var field = document.getElementById("imageOrder");
+        field.value = idList;
+        console.log("Image order changed: " + idList);
+    }
+</script>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+@Html.Partial("DropZone")

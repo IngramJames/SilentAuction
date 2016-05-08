@@ -1,0 +1,156 @@
+﻿@model SilentAuction.Models.Auction
+@using SilentAuction.Models
+
+@Scripts.Render("~/bundles/jquery")
+@Scripts.Render("~/bundles/jqueryval")
+@Styles.Render("~/bundles/sortablecss")
+@{
+    ViewBag.Title =SilentAuction.Resources.TextStrings.AuctionEdit;
+    List<Lot> availableLots = ViewBag.AvailableLots;
+}
+
+
+<h2>@ViewBag.Title</h2>
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div class="form-horizontal">
+        <hr />
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        @Html.HiddenFor(model => model.AuctionId)
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Description, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.TextAreaFor(model => model.Description, 10, 50, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.UseReserves, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-1">
+                @Html.CheckBoxFor(model => model.UseReserves, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.UseReserves, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+
+        <input type="hidden" id="lotOrder" name="lotOrder" />
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="@SilentAuction.Resources.TextStrings.Save" class="btn btn-default" />
+            </div>
+        </div>
+
+
+        <!--        <div class="form-group">-->
+        <div class="container">
+            <div style="margin-left: 30px">
+
+                <div class="layer tile" data-force="30" style="width:37%">
+                    <div class="layer title">@SilentAuction.Resources.TextStrings.LotsInAuction</div>
+                    <ul id="auctionLots" class="block__list block__list_words_and_image" style="list-style-type: none" ondragend="prepareIds()">
+                        @{
+                            foreach (Lot auctionLot in Model.Lots)
+                            {
+                                ImageFile image = auctionLot.MainImage;
+
+                                if (image != null)
+                                {
+                                    <li id="@auctionLot.LotId"><table><tr><td width="100"><img src="@image.GetThumbnail(50)" /></td><td>@auctionLot.Name</td></tr></table></li>
+                                }
+                            }
+                        }
+                    </ul>
+                </div>
+
+                <div class="layer tile" data-force="20" style="left:50%; width:40%">
+                    <div class="layer title">@SilentAuction.Resources.TextStrings.LotsAvailable</div>
+                    <div class="block__list block__list_words">
+                        <ul id="availableLots" class="block__list block__list_words_and_image" style="list-style-type: none" ondragend="prepareIds()">
+                            @{
+                                foreach (Lot lot in availableLots)
+                                {
+                                    ImageFile image = lot.MainImage;
+
+                                    if (image != null)
+                                    {
+                                        <li id="@lot.LotId"><table><tr><td width="100"><img src="@image.GetThumbnail(50)" /></td><td>@lot.Name</td></tr></table></li>
+                                    }
+                                }
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--        </div>-->
+    </div>
+
+                                }
+
+<div>
+    @Html.ActionLink(SilentAuction.Resources.TextStrings.BackToList, "AuctionList")
+</div>
+
+<script src="~/Content/3rdparty/Sortable.js"></script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        console.log("init sortable");
+        // initialise ID list
+        prepareIds();
+
+        // code from http://rubaxa.github.io/Sortable/st/app.js
+        // Multi groups
+        Sortable.create(document.getElementById('auctionLots'), {
+            group: 'lots',
+            animation: 150
+        });
+
+        Sortable.create(document.getElementById('availableLots'), {
+            group: 'lots',
+            animation: 150
+        });
+
+
+    });
+</script>
+
+<script>
+    function prepareIds() {
+        var images = document.getElementById("auctionLots");
+        var idList = "";
+        var first = true;
+        var i;
+        for (i = 0; i < images.childNodes.length; i++) {
+            var img = images.childNodes[i];
+            if (img.id) {
+                if (!first) {
+                    idList += ",";
+                }
+                first = false;
+
+                idList += img.id;
+            }
+        }
+
+        var field = document.getElementById("lotOrder");
+        field.value = idList;
+        console.log("Lot order changed: " + idList);
+    }
+
+</script>
+

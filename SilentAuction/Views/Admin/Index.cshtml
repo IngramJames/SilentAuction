@@ -1,0 +1,31 @@
+﻿
+@{
+    ViewBag.Title = SilentAuction.Resources.TextStrings.SystemConfiguration;
+}
+
+<h2>@ViewBag.Title</h2>
+
+<div class="row">
+    <div class="col-sm-4">
+        <p>
+            <a href="@Url.Action("SystemSettings", "Admin")" class="btn btn-danger btn-block">
+                <span class="glyphicon glyphicon-cog"> @SilentAuction.Resources.TextStrings.SettingsAndOptions</span>
+            </a>
+        </p>
+        <p>
+            <a href="@Url.Action("AuctionList", "Admin")" class="btn btn-danger btn-block">
+                <span class="glyphicon glyphicon-briefcase"> @SilentAuction.Resources.TextStrings.AuctionConfiguration</span>
+            </a>
+        </p>
+        <p>
+            <a href="@Url.Action("LotList", "Admin")" class="btn btn-danger btn-block">
+                <span class="glyphicon glyphicon-list"> @SilentAuction.Resources.TextStrings.LotConfiguration</span>
+            </a>
+        </p>
+        <p>
+            <a href="@Url.Action("FontsAndColours", "Admin")" class="btn btn-danger btn-block">
+                <span class="glyphicon glyphicon-list"> @SilentAuction.Resources.TextStrings.FontsAndColours</span>
+            </a>
+        </p>
+    </div>
+</div>

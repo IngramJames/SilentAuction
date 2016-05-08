@@ -1,0 +1,14 @@
+﻿@using SilentAuction.Resources
+@model SilentAuction.Models.Auction
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10 formText">@Model.Name</div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.Description, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10 formText">
+            @Model.Description
+        </div>
+    </div>
