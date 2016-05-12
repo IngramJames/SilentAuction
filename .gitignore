@@ -1,0 +1,13 @@
+*.suo
+SilentAuction/fonts/glyphicons-halflings-regular.eot
+SilentAuction/fonts/glyphicons-halflings-regular.svg
+SilentAuction/fonts/glyphicons-halflings-regular.woff2
+SilentAuction/fonts/glyphicons-halflings-regular.woff
+SilentAuction/fonts/glyphicons-halflings-regular.ttf
+*.dll
+*.obj
+*.pdb
+[Bb]in/
+obj/
+Uploads/
+logs/
