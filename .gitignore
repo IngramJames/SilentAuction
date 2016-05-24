@@ -11,3 +11,5 @@ SilentAuction/fonts/glyphicons-halflings-regular.ttf
 obj/
 Uploads/
 logs/
+SilentAuction/App_Data/DefaultConnection.mdf
+SilentAuction/App_Data/DefaultConnection_log.ldf
